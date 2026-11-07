@@ -1,0 +1,27 @@
+# Local database configuration
+/config/database.php
+
+# Environment variables
+.env
+.env.*
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Logs
+*.log
+/logs/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor settings
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
