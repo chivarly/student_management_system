@@ -824,3 +824,60 @@ body.auth-page {
         grid-template-columns: 1fr;
     }
 }
+/* =================================
+   14. PASSWORD VISIBILITY TOGGLE
+================================= */
+
+/* The wrapper is the positioning anchor for the icon.
+   The spacing moves here from the input, so the icon
+   centers on the input itself and not on the gap below it. */
+.password-wrapper {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.auth-card .password-wrapper input {
+    margin-bottom: 0;
+    padding-right: 44px; /* room so text never runs under the icon */
+}
+
+/* Override the global button styles: small, transparent, icon only */
+.auth-card .password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    margin-top: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--muted);
+}
+
+.auth-card .password-toggle:hover,
+.auth-card .password-toggle:focus-visible {
+    background-color: transparent;
+    color: var(--primary);
+}
+
+.password-toggle svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Show only one icon at a time */
+.password-toggle .icon-eye-off {
+    display: none;
+}
+
+.password-toggle.is-visible .icon-eye {
+    display: none;
+}
+
+.password-toggle.is-visible .icon-eye-off {
+    display: block;
+}
