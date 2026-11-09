@@ -151,6 +151,16 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
         <!-- Page Header -->
         <header class="form-page-header">
             <div>
+                <div class="brand-lockup">
+                    <div class="brand-logos">
+                        <img src="../assets/img/bicol-university-logo.png" alt="Bicol University logo">
+                        <img src="../assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
+                    </div>
+                    <div class="brand-copy">
+                        <strong>Bicol University</strong>
+                        <span>Polangui Campus · Student Management System</span>
+                    </div>
+                </div>
                 <h1>Student Management System</h1>
                 <p>Add a new student record to the system.</p>
             </div>

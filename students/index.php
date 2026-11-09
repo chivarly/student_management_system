@@ -70,10 +70,17 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <!-- Page Header -->
         <header class="students-header">
-            <div>
-                <h1>Student Management System</h1>
-                <p>Manage and view student records.</p>
+            <div class="brand-lockup">
+                <div class="brand-logos">
+                    <img src="../assets/img/bicol-university-logo.png" alt="Bicol University logo">
+                    <img src="../assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
+                </div>
+                <div class="brand-copy">
+                    <strong>Bicol University</strong>
+                    <span>Polangui Campus · Student Management System</span>
+                </div>
             </div>
+
 
             <div class="students-header-actions">
                 <?php if ($_SESSION["role"] === "admin"): ?>

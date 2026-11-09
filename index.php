@@ -92,6 +92,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 </head>
 <body class="auth-page">
     <main class="auth-card">
+        <div class="brand-lockup">
+            <div class="brand-logos">
+                <img src="assets/img/bicol-university-logo.png" alt="Bicol University logo">
+                <img src="assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
+            </div>
+            <div class="brand-copy">
+                <strong>Bicol University</strong>
+                <span>Polangui Campus · Student Management System</span>
+            </div>
+        </div>
         <h1>Student Management System</h1>
         <h2>Login</h2>
         <p class="auth-description">
@@ -156,6 +166,5 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </p>
     </main>
     <script src="assets/js/script.js" defer></script>
-</body>
 </body>
 </html>

@@ -1,38 +1,30 @@
-// Confirm before deleting a student
+// Confirm before deleting a student record.
 document.addEventListener("submit", function (event) {
     const form = event.target;
 
-    if (form.matches("[data-confirm]")) {
-        const message = form.getAttribute("data-confirm");
+    if (form instanceof HTMLFormElement && form.matches("[data-confirm]")) {
+        const message = form.getAttribute("data-confirm") || "Are you sure you want to continue?";
 
-        if (!confirm(message)) {
+        if (!window.confirm(message)) {
             event.preventDefault();
         }
     }
 });
 
-// Show / hide password when the eye icon is clicked
+// Toggle password visibility using the eye icon.
 document.addEventListener("click", function (event) {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
 
-    // Did the click happen on (or inside) a password toggle button?
-    const toggle = event.target.closest(".password-toggle");
+    const toggle = target.closest(".password-toggle");
+    if (!toggle) return;
 
-    if (!toggle) {
-        return; // Not a toggle click, so do nothing
-    }
-
-    // Find the password input that sits in the same wrapper
     const wrapper = toggle.closest(".password-wrapper");
-    const input = wrapper.querySelector("input");
+    const input = wrapper ? wrapper.querySelector("input") : null;
+    if (!input) return;
 
-    // If it is currently hidden, we are about to show it
     const showing = input.type === "password";
-
     input.type = showing ? "text" : "password";
-
-    // Swap the eye / eye-off icon (CSS reads this class)
     toggle.classList.toggle("is-visible", showing);
-
-    // Update the label for screen readers
     toggle.setAttribute("aria-label", showing ? "Hide password" : "Show password");
 });
