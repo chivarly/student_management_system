@@ -5,6 +5,7 @@ require_once "../includes/auth.php";
 requireLogin();
 
 require_once "../config/database.php";
+require_once "../includes/helpers.php";
 
 $csrfToken = generateCsrfToken();
 
@@ -19,11 +20,16 @@ $sql = "SELECT
             students.first_name,
             students.last_name,
             courses.course_code,
+            courses.course_name,
+            departments.department_name,
+            departments.department_code,
             year_levels.year_name,
             students.block
         FROM students
         INNER JOIN courses
             ON students.course_id = courses.course_id
+        INNER JOIN departments
+            ON courses.department_id = departments.department_id
         INNER JOIN year_levels
             ON students.year_level_id = year_levels.year_level_id";
 
@@ -62,207 +68,210 @@ $students = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Records - Student Management System</title>
 
+    <link rel="icon" type="image/png" href="../assets/img/bu-polangui-logo.png">
+    <script src="../assets/js/theme.js"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
+<body class="app-shell">
 
-    <main class="students-container">
+    <?php
+    $base = "../";
+    $active = "students";
+    require "../includes/sidebar.php";
+    ?>
 
-        <!-- Page Header -->
-        <header class="students-header">
-            <div class="brand-lockup">
-                <div class="brand-logos">
-                    <img src="../assets/img/bicol-university-logo.png" alt="Bicol University logo">
-                    <img src="../assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
+    <div class="app-content">
+        <main class="students-container">
+
+            <!-- Page Title -->
+            <section class="page-hero">
+                <div class="page-hero-copy">
+                    <p class="hero-kicker">Student Records</p>
+                    <h1>Students</h1>
+                    <p>Welcome, <?= htmlspecialchars($_SESSION["username"]) ?>. Browse and search campus student records.</p>
                 </div>
-                <div class="brand-copy">
-                    <strong>Bicol University</strong>
-                    <span>Polangui Campus · Student Management System</span>
-                </div>
-            </div>
 
-
-            <div class="students-header-actions">
                 <?php if ($_SESSION["role"] === "admin"): ?>
-                    <a href="../admin/dashboard.php">Dashboard</a>
+                    <a class="primary-button" href="create.php">
+                        + Add New Student
+                    </a>
                 <?php endif; ?>
+            </section>
 
-                <a href="../logout.php">Logout</a>
-            </div>
-        </header>
+            <!-- Search Section -->
+            <section class="panel search-panel">
 
-        <!-- Page Title -->
-        <section class="students-page-heading">
-            <div>
-                <h2>Student Records</h2>
-                <p>
-                    Welcome, <?= htmlspecialchars($_SESSION["username"]) ?>!
-                </p>
-            </div>
+                <form method="GET" class="search-form" role="search">
 
-            <?php if ($_SESSION["role"] === "admin"): ?>
-                <a class="primary-button" href="create.php">
-                    + Add New Student
-                </a>
+                    <div class="search-field">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="8"/>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input
+                            type="text"
+                            name="search"
+                            placeholder="Search student number or name..."
+                            value="<?= htmlspecialchars($search) ?>"
+                            aria-label="Search student number or name"
+                        >
+                    </div>
+
+                    <button type="submit" class="primary-button">Search</button>
+
+                    <a class="clear-search" href="index.php">Clear Search</a>
+
+                </form>
+
+            </section>
+
+            <!-- Success Messages -->
+            <?php if (isset($_GET["deleted"])): ?>
+                <div class="alert alert-success" role="status">
+                    Student deleted successfully!
+                </div>
             <?php endif; ?>
-        </section>
 
-        <!-- Search Section -->
-        <section class="students-search">
+            <?php if (isset($_GET["updated"])): ?>
+                <div class="alert alert-success" role="status">
+                    Student updated successfully!
+                </div>
+            <?php endif; ?>
 
-            <form method="GET" class="search-form">
+            <!-- Student Table -->
+            <section class="panel students-table-section">
 
-                <input
-                    type="text"
-                    name="search"
-                    placeholder="Search student number or name..."
-                    value="<?= htmlspecialchars($search) ?>"
-                >
+                <div class="table-heading panel-heading">
+                    <h2>All Students</h2>
 
-                <button type="submit">Search</button>
+                    <p>
+                        <?= $search !== "" ? "Search results: " : "Total students: " ?>
+                        <?= count($students) ?>
+                    </p>
+                </div>
 
-                <a href="index.php">Clear Search</a>
+                <div class="table-responsive">
 
-            </form>
+                    <table class="students-table">
 
-        </section>
+                        <thead>
+                            <tr>
+                                <th>Student Number</th>
+                                <th>First Name</th>
+                                <th>Last Name</th>
+                                <th>Course</th>
+                                <th>Department</th>
+                                <th>Year Level</th>
+                                <th>Block</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
 
-        <!-- Success Messages -->
-        <?php if (isset($_GET["deleted"])): ?>
-            <p class="success-message">
-                Student deleted successfully!
-            </p>
-        <?php endif; ?>
+                        <tbody>
 
-        <?php if (isset($_GET["updated"])): ?>
-            <p class="success-message">
-                Student updated successfully!
-            </p>
-        <?php endif; ?>
+                            <?php if (count($students) > 0): ?>
 
-        <!-- Student Table -->
-        <section class="students-table-section">
+                                <?php foreach ($students as $student): ?>
 
-            <div class="table-heading">
-                <h2>All Students</h2>
+                                    <tr>
+                                        <td>
+                                            <?= htmlspecialchars($student['student_number']) ?>
+                                        </td>
 
-                <p>
-                    <?= $search !== "" ? "Search results: " : "Total students: " ?>
-                    <?= count($students) ?>
-                </p>
-            </div>
+                                        <td>
+                                            <?= htmlspecialchars($student['first_name']) ?>
+                                        </td>
 
-            <div class="table-responsive">
+                                        <td>
+                                            <?= htmlspecialchars($student['last_name']) ?>
+                                        </td>
 
-                <table class="students-table">
+                                        <td>
+                                            <span class="course-code"><?= htmlspecialchars($student['course_code']) ?></span>
+                                            <span class="course-name"><?= htmlspecialchars($student['course_name']) ?></span>
+                                        </td>
 
-                    <thead>
-                        <tr>
-                            <th>Student Number</th>
-                            <th>First Name</th>
-                            <th>Last Name</th>
-                            <th>Course</th>
-                            <th>Year Level</th>
-                            <th>Block</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
+                                        <td>
+                                            <span class="dept-badge dept-<?= departmentClass($student['department_code']) ?>">
+                                                <?= htmlspecialchars($student['department_code']) ?>
+                                            </span>
+                                            <span class="dept-name"><?= htmlspecialchars($student['department_name']) ?></span>
+                                        </td>
 
-                    <tbody>
+                                        <td>
+                                            <?= htmlspecialchars($student['year_name']) ?>
+                                        </td>
 
-                        <?php if (count($students) > 0): ?>
+                                        <td>
+                                            <?= htmlspecialchars($student['block']) ?>
+                                        </td>
 
-                            <?php foreach ($students as $student): ?>
+                                        <td class="action-cell">
 
-                                <tr>
-                                    <td>
-                                        <?= htmlspecialchars($student['student_number']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($student['first_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($student['last_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($student['course_code']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($student['year_name']) ?>
-                                    </td>
-
-                                    <td>
-                                        <?= htmlspecialchars($student['block']) ?>
-                                    </td>
-
-                                    <td class="action-cell">
-
-                                        <a class="view-link"
-                                            href="view.php?id=<?= (int) $student['student_id'] ?>">
-                                            View
-                                        </a>
-
-                                        <?php if ($_SESSION["role"] === "admin"): ?>
-
-                                            <a class="edit-link"
-                                                href="edit.php?id=<?= (int) $student['student_id'] ?>">
-                                                Edit
+                                            <a class="view-link"
+                                                href="view.php?id=<?= (int) $student['student_id'] ?>">
+                                                View
                                             </a>
 
-                                            <form
-                                                action="delete.php"
-                                                method="POST"
-                                                class="delete-form"
-                                                data-confirm="Are you sure you want to delete this student?">
+                                            <?php if ($_SESSION["role"] === "admin"): ?>
 
-                                                <input
-                                                    type="hidden"
-                                                    name="student_id"
-                                                    value="<?= (int) $student['student_id'] ?>"
-                                                >
+                                                <a class="edit-link"
+                                                    href="edit.php?id=<?= (int) $student['student_id'] ?>">
+                                                    Edit
+                                                </a>
 
-                                                <input
-                                                    type="hidden"
-                                                    name="csrf_token"
-                                                    value="<?= htmlspecialchars($csrfToken) ?>"
-                                                >
+                                                <form
+                                                    action="delete.php"
+                                                    method="POST"
+                                                    class="delete-form"
+                                                    data-confirm="Are you sure you want to delete this student?">
 
-                                                <button type="submit" class="delete-button">
-                                                    Delete
-                                                </button>
+                                                    <input
+                                                        type="hidden"
+                                                        name="student_id"
+                                                        value="<?= (int) $student['student_id'] ?>"
+                                                    >
 
-                                            </form>
+                                                    <input
+                                                        type="hidden"
+                                                        name="csrf_token"
+                                                        value="<?= htmlspecialchars($csrfToken) ?>"
+                                                    >
 
-                                        <?php endif; ?>
+                                                    <button type="submit" class="delete-button">
+                                                        Delete
+                                                    </button>
 
+                                                </form>
+
+                                            <?php endif; ?>
+
+                                        </td>
+                                    </tr>
+
+                                <?php endforeach; ?>
+
+                            <?php else: ?>
+
+                                <tr>
+                                    <td colspan="8" class="empty-message">
+                                        No student records found.
                                     </td>
                                 </tr>
 
-                            <?php endforeach; ?>
+                            <?php endif; ?>
 
-                        <?php else: ?>
+                        </tbody>
 
-                            <tr>
-                                <td colspan="7" class="empty-message">
-                                    No student records found.
-                                </td>
-                            </tr>
+                    </table>
 
-                        <?php endif; ?>
+                </div>
 
-                    </tbody>
+            </section>
 
-                </table>
+        </main>
+    </div>
 
-            </div>
-
-        </section>
-
-    </main>
-<script src="../assets/js/script.js" defer></script>                           
+    <script src="../assets/js/script.js" defer></script>
 </body>
 </html>

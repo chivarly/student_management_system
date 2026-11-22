@@ -5,13 +5,22 @@ require_once "../includes/auth.php";
 requireAdmin();
 
 require_once "../config/database.php";
+require_once "../includes/helpers.php";
 
 $csrfToken = generateCsrfToken();
 $errors = [];
 
-// Get courses and year levels for the dropdown menus
+// Get departments, courses, and year levels for the dropdown menus
+$departments = $pdo->query(
+    "SELECT department_id, department_name, department_code
+     FROM departments
+     ORDER BY department_name"
+)->fetchAll(PDO::FETCH_ASSOC);
+
 $courses = $pdo->query(
-    "SELECT course_id, course_code FROM courses ORDER BY course_code"
+    "SELECT course_id, course_code, course_name, department_id
+     FROM courses
+     ORDER BY course_code"
 )->fetchAll(PDO::FETCH_ASSOC);
 
 $yearLevels = $pdo->query(
@@ -34,6 +43,7 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
     $address = trim($_POST["address"] ?? "");
     $contact_number = trim($_POST["contact_number"] ?? "");
     $email = trim($_POST["email"] ?? "");
+    $department_id = (int) ($_POST["department_id"] ?? 0);
     $course_id = (int) ($_POST["course_id"] ?? 0);
     $year_level_id = (int) ($_POST["year_level_id"] ?? 0);
     $block = trim($_POST["block"] ?? "");
@@ -49,6 +59,10 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
 
     if ($last_name === "") {
         $errors[] = "Last name is required.";
+    }
+
+    if ($department_id <= 0) {
+        $errors[] = "Please select a department.";
     }
 
     if ($course_id <= 0) {
@@ -68,6 +82,48 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
 
         if (!$date || $date->format("Y-m-d") !== $birthdate) {
             $errors[] = "Please enter a valid birthdate.";
+        }
+    }
+
+    // Check that the selected department exists
+    if ($department_id > 0) {
+        $departmentExists = $pdo->prepare(
+            "SELECT COUNT(*) FROM departments WHERE department_id = :department_id"
+        );
+        $departmentExists->execute([":department_id" => $department_id]);
+
+        if (!$departmentExists->fetchColumn()) {
+            $errors[] = "Selected department does not exist.";
+        }
+    }
+
+    // Check that the course exists and belongs to the selected department
+    if ($course_id > 0) {
+        $courseExists = $pdo->prepare(
+            "SELECT department_id FROM courses WHERE course_id = :course_id"
+        );
+        $courseExists->execute([":course_id" => $course_id]);
+        $courseRecord = $courseExists->fetch(PDO::FETCH_ASSOC);
+
+        if (!$courseRecord) {
+            $errors[] = "Selected course does not exist.";
+        } elseif (
+            $department_id > 0 &&
+            (int) $courseRecord["department_id"] !== $department_id
+        ) {
+            $errors[] = "Selected course does not belong to the selected department.";
+        }
+    }
+
+    // Check that the selected year level exists
+    if ($year_level_id > 0) {
+        $yearExists = $pdo->prepare(
+            "SELECT COUNT(*) FROM year_levels WHERE year_level_id = :year_level_id"
+        );
+        $yearExists->execute([":year_level_id" => $year_level_id]);
+
+        if (!$yearExists->fetchColumn()) {
+            $errors[] = "Selected year level does not exist.";
         }
     }
 
@@ -132,6 +188,9 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
     }
 }
 
+$selectedDepartment = $_POST["department_id"] ?? "";
+$selectedCourse = $_POST["course_id"] ?? "";
+
 ?>
 
 
@@ -142,215 +201,265 @@ if (!verifyCsrfToken($_POST["csrf_token"] ?? null)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Student - Student Management System</title>
 
+    <link rel="icon" type="image/png" href="../assets/img/bicol-university-logo.png">
+    <script src="../assets/js/theme.js"></script>
     <link rel="stylesheet" href="../assets/css/style.css">
 </head>
-<body>
+<body class="app-shell">
 
-    <main class="form-container">
+    <?php
+    $base = "../";
+    $active = "create";
+    require "../includes/sidebar.php";
+    ?>
 
-        <!-- Page Header -->
-        <header class="form-page-header">
-            <div>
-                <div class="brand-lockup">
-                    <div class="brand-logos">
-                        <img src="../assets/img/bicol-university-logo.png" alt="Bicol University logo">
-                        <img src="../assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
-                    </div>
-                    <div class="brand-copy">
-                        <strong>Bicol University</strong>
-                        <span>Polangui Campus · Student Management System</span>
-                    </div>
-                </div>
-                <h1>Student Management System</h1>
-                <p>Add a new student record to the system.</p>
+    <div class="app-content">
+        <main class="form-container">
+
+            <div class="page-topline">
+                <a class="back-link" href="index.php">Back to Student Records</a>
             </div>
 
-            <a href="index.php">Back to Student Records</a>
-        </header>
-
-        <!-- Form Heading -->
-        <section class="form-heading">
-            <h2>Add New Student</h2>
-            <p>Fill in the student's information below.</p>
-        </section>
-
-        <!-- Success Message -->
-        <?php if (isset($_GET["success"])): ?>
-            <p class="success-message">
-                Student added successfully!
-            </p>
-        <?php endif; ?>
-
-        <!-- Validation Errors -->
-        <?php if (!empty($errors)): ?>
-            <div class="error-message">
-                <strong>Please check the following:</strong>
-
-                <?php foreach ($errors as $error): ?>
-                    <p><?= htmlspecialchars($error) ?></p>
-                <?php endforeach; ?>
-            </div>
-        <?php endif; ?>
-
-        <!-- Student Form -->
-        <form method="POST" class="student-form">
-
-            <input
-                type="hidden"
-                name="csrf_token"
-                value="<?= htmlspecialchars($csrfToken) ?>"
-            >
-
-            <div class="form-grid">
-
-                <div class="form-group">
-                    <label for="student_number">Student Number *</label>
-                    <input
-                        type="text"
-                        id="student_number"
-                        name="student_number"
-                        value="<?= htmlspecialchars($_POST["student_number"] ?? "") ?>"
-                        required
-                    >
+            <!-- Form Heading -->
+            <header class="page-heading">
+                <div>
+                    <h1>Add New Student</h1>
+                    <p>Add a new student record to the system.</p>
                 </div>
+            </header>
 
-                <div class="form-group">
-                    <label for="first_name">First Name *</label>
-                    <input
-                        type="text"
-                        id="first_name"
-                        name="first_name"
-                        value="<?= htmlspecialchars($_POST["first_name"] ?? "") ?>"
-                        required
-                    >
+            <!-- Success Message -->
+            <?php if (isset($_GET["success"])): ?>
+                <div class="alert alert-success" role="status">
+                    Student added successfully!
                 </div>
+            <?php endif; ?>
 
-                <div class="form-group">
-                    <label for="last_name">Last Name *</label>
-                    <input
-                        type="text"
-                        id="last_name"
-                        name="last_name"
-                        value="<?= htmlspecialchars($_POST["last_name"] ?? "") ?>"
-                        required
-                    >
+            <!-- Validation Errors -->
+            <?php if (!empty($errors)): ?>
+                <div class="alert alert-error" role="alert">
+                    <strong>Please check the following:</strong>
+
+                    <?php foreach ($errors as $error): ?>
+                        <p><?= htmlspecialchars($error) ?></p>
+                    <?php endforeach; ?>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-group">
-                    <label for="birthdate">Birthdate</label>
-                    <input
-                        type="date"
-                        id="birthdate"
-                        name="birthdate"
-                        value="<?= htmlspecialchars($_POST["birthdate"] ?? "") ?>"
-                    >
-                </div>
+            <!-- Student Form -->
+            <form method="POST" class="student-form">
 
-                <div class="form-group">
-                    <label for="gender">Gender</label>
-                    <select id="gender" name="gender">
-                        <option value="">Select Gender</option>
-                        <option value="Male"
-                            <?= ($_POST["gender"] ?? "") === "Male" ? "selected" : "" ?>>
-                            Male
-                        </option>
-                        <option value="Female"
-                            <?= ($_POST["gender"] ?? "") === "Female" ? "selected" : "" ?>>
-                            Female
-                        </option>
-                    </select>
-                </div>
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="<?= htmlspecialchars($csrfToken) ?>"
+                >
 
-                <div class="form-group">
-                    <label for="contact_number">Contact Number</label>
-                    <input
-                        type="text"
-                        id="contact_number"
-                        name="contact_number"
-                        value="<?= htmlspecialchars($_POST["contact_number"] ?? "") ?>"
-                    >
-                </div>
+                <section class="form-section">
+                    <h2>Personal Information</h2>
+                    <p>Enter the student's basic and contact details.</p>
 
-                <div class="form-group">
-                    <label for="email">Email Address</label>
-                    <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        value="<?= htmlspecialchars($_POST["email"] ?? "") ?>"
-                    >
-                </div>
+                    <div class="form-grid">
 
-                <div class="form-group">
-                    <label for="course_id">Course *</label>
-                    <select id="course_id" name="course_id" required>
-                        <option value="">Select Course</option>
-
-                        <?php foreach ($courses as $course): ?>
-                            <option
-                                value="<?= $course["course_id"] ?>"
-                                <?= (($_POST["course_id"] ?? "") == $course["course_id"]) ? "selected" : "" ?>
+                        <div class="form-group">
+                            <label for="student_number">Student Number *</label>
+                            <input
+                                type="text"
+                                id="student_number"
+                                name="student_number"
+                                value="<?= htmlspecialchars($_POST["student_number"] ?? "") ?>"
+                                required
                             >
-                                <?= htmlspecialchars($course["course_code"]) ?>
-                            </option>
-                        <?php endforeach; ?>
+                        </div>
 
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="year_level_id">Year Level *</label>
-                    <select id="year_level_id" name="year_level_id" required>
-                        <option value="">Select Year Level</option>
-
-                        <?php foreach ($yearLevels as $year): ?>
-                            <option
-                                value="<?= $year["year_level_id"] ?>"
-                                <?= (($_POST["year_level_id"] ?? "") == $year["year_level_id"]) ? "selected" : "" ?>
+                        <div class="form-group">
+                            <label for="first_name">First Name *</label>
+                            <input
+                                type="text"
+                                id="first_name"
+                                name="first_name"
+                                value="<?= htmlspecialchars($_POST["first_name"] ?? "") ?>"
+                                required
                             >
-                                <?= htmlspecialchars($year["year_name"]) ?>
-                            </option>
-                        <?php endforeach; ?>
+                        </div>
 
-                    </select>
+                        <div class="form-group">
+                            <label for="last_name">Last Name *</label>
+                            <input
+                                type="text"
+                                id="last_name"
+                                name="last_name"
+                                value="<?= htmlspecialchars($_POST["last_name"] ?? "") ?>"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="birthdate">Birthdate</label>
+                            <input
+                                type="date"
+                                id="birthdate"
+                                name="birthdate"
+                                value="<?= htmlspecialchars($_POST["birthdate"] ?? "") ?>"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender">
+                                <option value="">Select Gender</option>
+                                <option value="Male"
+                                    <?= ($_POST["gender"] ?? "") === "Male" ? "selected" : "" ?>>
+                                    Male
+                                </option>
+                                <option value="Female"
+                                    <?= ($_POST["gender"] ?? "") === "Female" ? "selected" : "" ?>>
+                                    Female
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="contact_number">Contact Number</label>
+                            <input
+                                type="text"
+                                id="contact_number"
+                                name="contact_number"
+                                value="<?= htmlspecialchars($_POST["contact_number"] ?? "") ?>"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                value="<?= htmlspecialchars($_POST["email"] ?? "") ?>"
+                            >
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="address">Address</label>
+                            <textarea
+                                id="address"
+                                name="address"
+                                rows="3"
+                            ><?= htmlspecialchars($_POST["address"] ?? "") ?></textarea>
+                        </div>
+
+                    </div>
+                </section>
+
+                <section class="form-section">
+                    <h2>Academic Information</h2>
+                    <p>Choose a department first, then select one of its courses.</p>
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="department_id">Department *</label>
+                            <select
+                                id="department_id"
+                                name="department_id"
+                                data-department-select
+                                required
+                            >
+                                <option value="">Select Department</option>
+
+                                <?php foreach ($departments as $department): ?>
+                                    <option
+                                        value="<?= (int) $department["department_id"] ?>"
+                                        <?= (string) $selectedDepartment === (string) $department["department_id"] ? "selected" : "" ?>
+                                    >
+                                        <?= htmlspecialchars($department["department_code"]) ?>
+                                        &middot;
+                                        <?= htmlspecialchars($department["department_name"]) ?>
+                                    </option>
+                                <?php endforeach; ?>
+
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="course_id">Course *</label>
+                            <select
+                                id="course_id"
+                                name="course_id"
+                                data-course-select
+                                required
+                            >
+                                <option value="">Select Course</option>
+
+                                <?php foreach ($courses as $course): ?>
+                                    <option
+                                        value="<?= (int) $course["course_id"] ?>"
+                                        data-department="<?= (int) $course["department_id"] ?>"
+                                        <?= (string) $selectedCourse === (string) $course["course_id"] ? "selected" : "" ?>
+                                    >
+                                        <?= htmlspecialchars($course["course_code"]) ?>
+                                        &mdash;
+                                        <?= htmlspecialchars($course["course_name"]) ?>
+                                    </option>
+                                <?php endforeach; ?>
+
+                            </select>
+                            <p class="field-hint">Available courses update based on the selected department.</p>
+                            <noscript>
+                                <p class="field-hint">
+                                    JavaScript is disabled. All courses are shown; the selected course must
+                                    belong to the selected department.
+                                </p>
+                            </noscript>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="year_level_id">Year Level *</label>
+                            <select id="year_level_id" name="year_level_id" required>
+                                <option value="">Select Year Level</option>
+
+                                <?php foreach ($yearLevels as $year): ?>
+                                    <option
+                                        value="<?= (int) $year["year_level_id"] ?>"
+                                        <?= (string) ($_POST["year_level_id"] ?? "") === (string) $year["year_level_id"] ? "selected" : "" ?>
+                                    >
+                                        <?= htmlspecialchars($year["year_name"]) ?>
+                                    </option>
+                                <?php endforeach; ?>
+
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="block">Block</label>
+                            <input
+                                type="text"
+                                id="block"
+                                name="block"
+                                value="<?= htmlspecialchars($_POST["block"] ?? "") ?>"
+                            >
+                        </div>
+
+                    </div>
+                </section>
+
+                <div class="form-buttons">
+                    <button type="submit" class="submit-button">
+                        Add Student
+                    </button>
+
+                    <a href="index.php" class="cancel-button">
+                        Cancel
+                    </a>
                 </div>
 
-                <div class="form-group">
-                    <label for="block">Block</label>
-                    <input
-                        type="text"
-                        id="block"
-                        name="block"
-                        value="<?= htmlspecialchars($_POST["block"] ?? "") ?>"
-                    >
-                </div>
+                <p class="required-note">* Required fields</p>
 
-                <div class="form-group full-width">
-                    <label for="address">Address</label>
-                    <textarea
-                        id="address"
-                        name="address"
-                        rows="3"
-                    ><?= htmlspecialchars($_POST["address"] ?? "") ?></textarea>
-                </div>
+            </form>
 
-            </div>
+        </main>
+    </div>
 
-            <div class="form-buttons">
-                <button type="submit" class="submit-button">
-                    Add Student
-                </button>
-
-                <a href="index.php" class="cancel-button">
-                    Cancel
-                </a>
-            </div>
-
-            <p class="required-note">* Required fields</p>
-
-        </form>
-
-    </main>
-
+    <script src="../assets/js/script.js" defer></script>
 </body>
 </html>

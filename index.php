@@ -88,83 +88,106 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Student Management System</title>
 
+    <link rel="icon" type="image/png" href="assets/img/bu-polangui-logo.png">
+    <script src="assets/js/theme.js"></script>
     <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body class="auth-page">
-    <main class="auth-card">
-        <div class="brand-lockup">
-            <div class="brand-logos">
-                <img src="assets/img/bicol-university-logo.png" alt="Bicol University logo">
-                <img src="assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
-            </div>
-            <div class="brand-copy">
-                <strong>Bicol University</strong>
-                <span>Polangui Campus · Student Management System</span>
-            </div>
-        </div>
-        <h1>Student Management System</h1>
-        <h2>Login</h2>
-        <p class="auth-description">
-            Sign in to access your account.
-        </p>
+    <div class="auth-theme">
+        <?php require __DIR__ . "/includes/theme-toggle.php"; ?>
+    </div>
 
-        <?php if (isset($_GET["registered"]) && $_GET["registered"] === "1"): ?>
+    <main class="auth-shell">
+        <section class="auth-visual" aria-label="Bicol University Polangui Campus">
+            <div class="auth-visual-brand">
+                <div class="brand-logos">
+                    <img src="assets/img/bicol-university-logo.png" alt="Bicol University logo">
+                    <img src="assets/img/bu-polangui-logo.png" alt="Bicol University Polangui logo">
+                </div>
+                <div class="brand-copy">
+                    <strong>Bicol University</strong>
+                    <span>Polangui Campus</span>
+                </div>
+            </div>
 
-            <p style="color: green;">
-                Registration successful! You can now log in to your account.
+            <div class="auth-visual-copy">
+                <p class="auth-eyebrow">Student Management System</p>
+                <h2>One place for student records.</h2>
+                <p>
+                    Manage student profiles, courses, and academic details
+                    across Bicol University&ndash;Polangui Campus.
+                </p>
+            </div>
+
+            <p class="auth-visual-foot">Polangui, Albay · Bicol University</p>
+        </section>
+
+        <section class="auth-card">
+            <h1>Welcome back</h1>
+            <p class="auth-description">Sign in to access the Student Management System.</p>
+
+            <?php if (isset($_GET["registered"]) && $_GET["registered"] === "1"): ?>
+                <div class="alert alert-success" role="status">
+                    Registration successful! You can now log in to your account.
+                </div>
+            <?php endif; ?>
+
+            <?php if ($error !== ""): ?>
+                <div class="alert alert-error" role="alert">
+                    <?= htmlspecialchars($error) ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value="<?= htmlspecialchars($username) ?>"
+                        autocomplete="username"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="password-wrapper">
+                        <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            autocomplete="current-password"
+                            required
+                        >
+                        <button type="button" class="password-toggle" aria-label="Show password">
+                            <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
+                                <line x1="1" y1="1" x2="23" y2="23"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-button">Login</button>
+            </form>
+
+            <p class="auth-footer">
+                Don't have an account?
+                <a href="register.php">Sign up now</a>
             </p>
-
-        <?php endif; ?>
-
-        <?php if ($error !== ""): ?>
-            <p style="color: red;">
-                <?= htmlspecialchars($error) ?>
-            </p>
-        <?php endif; ?>
-
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken) ?>">
-
-            <label>Username:</label><br>
-            <input
-                type="text"
-                name="username"
-                value="<?= htmlspecialchars($username) ?>"
-                required
-            >
-            <br><br>
-
-                        <label for="password">Password:</label>
-            <div class="password-wrapper">
-                <input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                >
-                <button type="button" class="password-toggle" aria-label="Show password">
-                    <svg class="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    <svg class="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                        <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/>
-                        <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                </button>
-            </div>
-
-            <button type="submit">Login</button>
-
-        </form>
-        
-        <p class="auth-footer">
-            Don't have an account?
-            <a href="register.php">Sign up now</a>
-        </p>
+        </section>
     </main>
+
     <script src="assets/js/script.js" defer></script>
 </body>
 </html>
