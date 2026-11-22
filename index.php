@@ -123,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </section>
 
         <section class="auth-card">
-            <h1>Welcome back</h1>
+            <h1>Welcome!</h1>
             <p class="auth-description">Sign in to access the Student Management System.</p>
 
             <?php if (isset($_GET["registered"]) && $_GET["registered"] === "1"): ?>
