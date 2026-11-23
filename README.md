@@ -17,9 +17,8 @@ A web-based student records management system for Bicol University–Polangui Ca
 9. [Installation and Setup Using XAMPP](#9-installation-and-setup-using-xampp)
 10. [How to Access and Use the Application](#10-how-to-access-and-use-the-application)
 11. [Security Measures](#11-security-measures)
-12. [Screenshots](#12-screenshots)
-13. [Project Information](#13-project-information)
-14. [License and Use](#14-license-and-use)
+12. [Project Information](#12-project-information)
+13. [License and Use](#13-license-and-use)
 
 ---
 
@@ -154,9 +153,10 @@ The following are **not** implemented in the current version:
 
 | Capability | Guest | User | Administrator |
 |---|---|---|---|
-| View login page | Yes | Yes | Yes |
-| Register a new account | Yes | Yes | Yes |
-| Log in / log out | Yes | Yes | Yes |
+| View login page | Yes | Redirected | Redirected |
+| Register a new account | Yes | Redirected | Redirected |
+| Log in | Yes | Yes | Yes |
+| Log out | No | Yes | Yes |
 | View student list | No | Yes | Yes |
 | Search student records | No | Yes | Yes |
 | View a student profile | No | Yes | Yes |
@@ -166,6 +166,8 @@ The following are **not** implemented in the current version:
 | Delete a student | No | No (403) | Yes |
 
 New accounts created through the registration page always receive the **user** role. Administrator access must be assigned through the database during initial setup (see [Section 9.5](#95-create-the-first-administrator-account)).
+
+**Redirected** means signed-in accounts cannot open the login or registration page; they are sent to their role's home page (dashboard for administrators, student list for regular users).
 
 ---
 
@@ -243,6 +245,9 @@ student_management_system/
 │
 ├── database/
 │   └── student_management_system.sql   Schema and reference data for a fresh install
+│
+├── docs/
+│   └── DATABASE.md               Technical database reference
 │
 ├── assets/
 │   ├── css/
@@ -427,23 +432,20 @@ database/student_management_system.sql
 **Option A: Import through phpMyAdmin**
 
 1. Open `http://localhost/phpmyadmin` in your browser.
+2. *Optional:* create the database ahead of time. In the left panel, click **New**, enter the name `student_management_system`, choose the collation `utf8mb4_general_ci`, and click **Create**.
 
-   > The SQL file includes `CREATE DATABASE IF NOT EXISTS`, so steps 2–5 are optional. Creating the database first with `utf8mb4_general_ci` guarantees the intended collation.
+   > This step is not required. The SQL file already creates the database if it does not exist and sets `utf8mb4` / `utf8mb4_general_ci`, so creating it first only lets you select it in advance.
 
-2. In the left panel, click **New**.
-3. Enter the database name `student_management_system`.
-4. Choose the collation `utf8mb4_general_ci`.
-5. Click **Create**.
-6. Select the new database in the left panel.
-7. Open the **Import** tab.
-8. Click **Choose File** and select:
+3. Select the database in the left panel **only if you created it in step 2**. If you skipped step 2, stay on the phpMyAdmin home page; the import will create the database.
+4. Open the **Import** tab.
+5. Click **Choose File** and select:
 
    ```text
    C:\xampp\htdocs\student_management_system\database\student_management_system.sql
    ```
 
-9. Leave the default import settings and click **Import** (or **Go**).
-10. Wait for the success message. The five tables and the reference data should now be visible.
+6. Leave the default import settings and click **Import** (or **Go**).
+7. Wait for the success message. The five tables and the reference data should now be visible.
 
 **Option B: Import from the phpMyAdmin home page**
 
@@ -596,7 +598,7 @@ Required fields are marked with an asterisk. The server validates the input even
 **Editing a student**
 
 1. Open the student list or a student profile.
-2. Click **Edit**.
+2. Click **Edit** on the target row in the student list (`students/index.php`), or click **Edit Student** on the student profile page (`students/view.php`).
 3. Update the fields.
 4. Click **Save Changes**.
 
@@ -670,6 +672,8 @@ The application implements the following security measures:
 - Dates are validated with `DateTime::createFromFormat()`.
 - Identifiers are validated as positive integers.
 - Student numbers are checked for uniqueness by the database, and duplicate-key errors are handled gracefully.
+- Write and authentication handlers (`register.php`, `students/create.php`, `students/edit.php`, `students/delete.php`) catch and log SQL errors instead of showing database details to users.
+- The read views (`students/index.php`, `students/view.php`) execute their queries without a try/catch block; a database failure on those pages is not converted into a friendly message.
 
 ### 11.7 HTTP Security Headers
 
@@ -701,139 +705,7 @@ These limitations are acceptable for a local academic project but should be addr
 
 ---
 
-## 12. Screenshots
-
-The screenshots below are placeholders. Capture the actual screens and replace each placeholder block with the corresponding image and caption.
-
-Suggested folder for the images:
-
-```text
-docs/screenshots/
-```
-
----
-
-### Screenshot 1 — Login Page
-
-```text
-[ SCREENSHOT PLACEHOLDER 1 — LOGIN PAGE ]
-Suggested file name: docs/screenshots/01-login-page.png
-Capture: The full browser window showing the login page in light mode, logged out.
-URL: http://localhost/student_management_system/
-Figure caption: Figure 1. Login page of the Student Management System.
-```
-
----
-
-### Screenshot 2 — Registration Page
-
-```text
-[ SCREENSHOT PLACEHOLDER 2 — REGISTRATION PAGE ]
-Suggested file name: docs/screenshots/02-registration-page.png
-Capture: The registration form with username, password, and confirm-password fields.
-URL: http://localhost/student_management_system/register.php
-Figure caption: Figure 2. Registration page for new user accounts.
-```
-
----
-
-### Screenshot 3 — Administrator Dashboard
-
-```text
-[ SCREENSHOT PLACEHOLDER 3 — ADMINISTRATOR DASHBOARD ]
-Suggested file name: docs/screenshots/03-admin-dashboard.png
-Capture: The dashboard showing the four system totals and the management shortcuts.
-URL: http://localhost/student_management_system/admin/dashboard.php
-Figure caption: Figure 3. Administrator dashboard.
-```
-
----
-
-### Screenshot 4 — Student List
-
-```text
-[ SCREENSHOT PLACEHOLDER 4 — STUDENT LIST ]
-Suggested file name: docs/screenshots/04-student-list.png
-Capture: The student records table with course, department badge, year level, and actions.
-URL: http://localhost/student_management_system/students/index.php
-Figure caption: Figure 4. Student records list.
-```
-
----
-
-### Screenshot 5 — Search Results
-
-```text
-[ SCREENSHOT PLACEHOLDER 5 — SEARCH RESULTS ]
-Suggested file name: docs/screenshots/05-search-results.png
-Capture: The student list filtered by a sample student number or surname.
-URL: http://localhost/student_management_system/students/index.php?search=your-search-term
-Figure caption: Figure 5. Filtered student records.
-```
-
----
-
-### Screenshot 6 — Add Student Form
-
-```text
-[ SCREENSHOT PLACEHOLDER 6 — ADD STUDENT FORM ]
-Suggested file name: docs/screenshots/06-add-student.png
-Capture: The add form with a selected department and the filtered course list visible.
-URL: http://localhost/student_management_system/students/create.php
-Figure caption: Figure 6. Add student form with department-based course filtering.
-```
-
----
-
-### Screenshot 7 — Edit Student Form
-
-```text
-[ SCREENSHOT PLACEHOLDER 7 — EDIT STUDENT FORM ]
-Suggested file name: docs/screenshots/07-edit-student.png
-Capture: The edit form with an existing student's information loaded.
-URL: http://localhost/student_management_system/students/edit.php?id=student-id
-Replace student-id with the ID of an existing student record.
-Figure caption: Figure 7. Edit student form.
-```
-
----
-
-### Screenshot 8 — Student Profile
-
-```text
-[ SCREENSHOT PLACEHOLDER 8 — STUDENT PROFILE ]
-Suggested file name: docs/screenshots/08-student-profile.png
-Capture: A student profile showing personal, academic, and record information.
-URL: http://localhost/student_management_system/students/view.php?id=student-id
-Replace student-id with the ID of an existing student record.
-Figure caption: Figure 8. Student profile page.
-```
-
----
-
-### Screenshot 9 — Dark Mode
-
-```text
-[ SCREENSHOT PLACEHOLDER 9 — DARK MODE ]
-Suggested file name: docs/screenshots/09-dark-mode.png
-Capture: Any main page with the dark theme enabled using the theme button.
-Figure caption: Figure 9. Interface in dark mode.
-```
-
----
-
-### Screenshot 10 — Mobile View
-
-```text
-[ SCREENSHOT PLACEHOLDER 10 — MOBILE VIEW ]
-Suggested file name: docs/screenshots/10-mobile-view.png
-Capture: The application on a narrow screen with the navigation drawer open.
-Figure caption: Figure 10. Responsive mobile layout with navigation drawer.
-```
-
----
-
-## 13. Project Information
+## 12. Project Information
 
 Complete the following details before submitting the project.
 
@@ -850,6 +722,6 @@ Complete the following details before submitting the project.
 
 ---
 
-## 14. License and Use
+## 13. License and Use
 
 This project was created for academic purposes at Bicol University–Polangui Campus. It is intended for educational demonstration and local use. Student information must be handled responsibly and in accordance with the institution's data privacy policies.
