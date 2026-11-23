@@ -132,6 +132,7 @@ $totalUsers = $pdo->query(
                 <div class="action-links">
                     <a href="../students/index.php">Manage Students</a>
                     <a href="../students/create.php">Add New Student</a>
+                    <a href="manage_account.php">Manage Account</a>
                 </div>
             </section>
 
