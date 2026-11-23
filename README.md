@@ -30,7 +30,7 @@ The system stores each student's personal details and academic information, incl
 
 The application has two account roles:
 
-- **Administrator** – manages student records and views system totals.
+- **Administrator** – manages student records, views system totals, and updates their own account credentials.
 - **User** – browses, searches, and views student profiles in read-only mode.
 
 The interface is responsive and supports both light and dark themes. It is intended to run locally through XAMPP during development and demonstration.
@@ -67,6 +67,8 @@ This project was developed with the following objectives:
 - Newly registered accounts are always assigned the **user** role.
 - A password visibility toggle lets users show or hide the password while typing.
 - A generic error message is shown for invalid login attempts.
+- Administrators can update their own username and change their password from the **Manage Account** page.
+- Changing the password requires the current password; the session ID is regenerated after a successful change.
 
 ### 3.2 Role-Based Access
 
@@ -121,7 +123,7 @@ The dashboard displays current system totals:
 - Total year levels
 - Total users
 
-It also provides shortcuts to the student list and the add-student form.
+It also provides shortcuts to the student list, the add-student form, and the **Manage Account** page.
 
 ### 3.7 User Interface
 
@@ -137,7 +139,7 @@ It also provides shortcuts to the student list and the add-student form.
 The following are **not** implemented in the current version:
 
 - Pagination of the student list (all matching records are displayed).
-- A user management screen (accounts are created through registration only).
+- A user management screen for other accounts. Administrators can edit only their own username and password; new accounts are created through registration only.
 - Management screens for departments, courses, or year levels (reference data is maintained in the database).
 - Export to PDF, Excel, or CSV.
 - Attendance, grades, or class scheduling.
@@ -164,6 +166,7 @@ The following are **not** implemented in the current version:
 | Add a student | No | No (403) | Yes |
 | Edit a student | No | No (403) | Yes |
 | Delete a student | No | No (403) | Yes |
+| Manage own account (username and password) | No | No (403) | Yes |
 
 New accounts created through the registration page always receive the **user** role. Administrator access must be assigned through the database during initial setup (see [Section 9.5](#95-create-the-first-administrator-account)).
 
@@ -224,7 +227,8 @@ student_management_system/
 ├── README.md                     This documentation file
 │
 ├── admin/
-│   └── dashboard.php             Administrator dashboard with system totals
+│   ├── dashboard.php             Administrator dashboard with system totals
+│   └── manage_account.php        Update own username and password (administrators only)
 │
 ├── students/
 │   ├── index.php                 Student list and search
@@ -612,10 +616,17 @@ Changing the department clears the selected course so that a valid course from t
 
 Deletion is accepted only through a POST request with a valid CSRF token.
 
+**Managing your account**
+
+1. Open **Manage Account** in the sidebar, or click **Manage Account** on the dashboard.
+2. Update the username if needed. It must be 3–50 characters and may contain only letters, numbers, and underscores.
+3. To change the password, enter the current password, the new password, and the confirmation. Leave all password fields blank to keep the current password.
+4. Click **Save Changes**.
+
 ### 10.4 Interface controls
 
 - **Theme button:** switches between light and dark mode and remembers the choice in the browser.
-- **Sidebar:** provides navigation between the dashboard (administrators), student list, and **Add Student** form (administrators).
+- **Sidebar:** provides navigation between the dashboard, student list, **Add Student** form, and **Manage Account** page (the last two for administrators only).
 - **Mobile menu button:** opens and closes the navigation drawer on small screens. Pressing `Escape` or clicking outside the drawer also closes it.
 - **Password eye icon:** shows or hides the password field while typing.
 
@@ -632,6 +643,7 @@ The application implements the following security measures:
 - The session ID is regenerated after a successful login to prevent session fixation.
 - Invalid login attempts receive a generic message that does not reveal whether the username or password was incorrect.
 - Logout clears session data, expires the session cookie, and destroys the session.
+- Changing a password requires the current password and regenerates the session ID afterwards.
 
 ### 11.2 Authorization
 
@@ -651,7 +663,7 @@ The application implements the following security measures:
 ### 11.4 Cross-Site Request Forgery (CSRF)
 
 - A random CSRF token is generated and stored in the session.
-- The token is included in login, registration, add, edit, and delete forms.
+- The token is included in login, registration, add, edit, delete, and account-update forms.
 - Submitted tokens are compared using `hash_equals()`, which provides a timing-safe comparison.
 - The delete handler rejects non-POST requests.
 
@@ -672,7 +684,7 @@ The application implements the following security measures:
 - Dates are validated with `DateTime::createFromFormat()`.
 - Identifiers are validated as positive integers.
 - Student numbers are checked for uniqueness by the database, and duplicate-key errors are handled gracefully.
-- Write and authentication handlers (`register.php`, `students/create.php`, `students/edit.php`, `students/delete.php`) catch and log SQL errors instead of showing database details to users.
+- Write and authentication handlers (`register.php`, `admin/manage_account.php`, `students/create.php`, `students/edit.php`, `students/delete.php`) catch and log SQL errors instead of showing database details to users.
 - The read views (`students/index.php`, `students/view.php`) execute their queries without a try/catch block; a database failure on those pages is not converted into a friendly message.
 
 ### 11.7 HTTP Security Headers
